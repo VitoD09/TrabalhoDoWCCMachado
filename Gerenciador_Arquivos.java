@@ -5,6 +5,8 @@ import java.io.IOException;
 public class Gerenc_Arc {
     public static void main(String[] args) {
         Scanner leitor = new Scanner(System.in);
+        int escolha;
+        do{
         System.out.print("""
             =============================== 
                 Gerenciador de Arquivos
@@ -17,21 +19,12 @@ public class Gerenc_Arc {
             ===============================
             escolha uma opção:
                 """);
-        int escolha = leitor.nextInt();
+        escolha = leitor.nextInt();
         leitor.nextLine();
-       
-       
+
         if(escolha == 1){
-            File arquivo = nomeArquivo();
-            try {
-            if(arquivo.createNewFile()){
-                System.out.println("Arquivo criado com sucesso: " + arquivo.getName());
-            } else {
-                System.out.println("O arquivo já existe.");
-            }
-        }catch (IOException e) {
-            System.out.println("Ocorreu um erro ao criar o arquivo: " + e.getMessage());
-        }
+            criarArquivo()
+            ;
     }     else if(escolha == 2){
             EditarArquivo();
         }
@@ -44,10 +37,11 @@ public class Gerenc_Arc {
             System.out.println("Pograma finalizado");
         }
         else {
-            System.out.println("Opção inválida. Por favor, escolha uma opção entre 1 e 4.");
+            System.out.println("Opção inválida. Por favor, escolha uma opção entre 1 e 5.");
         }
-
+    } while(escolha != 5);
         leitor.close();
+        System.out.println("");
     }
     public static void EditarArquivo() {
         File arquivo = nomeArquivo();
@@ -66,21 +60,40 @@ public class Gerenc_Arc {
                  System.out.println("Ocorreu um erro ao escrever no arquivo: " + e.getMessage());
 
             }
-            Escrever.close();   
+           
          } else {
                 System.out.println("O arquivo não existe.");
                 return;
             }     
-    }  
+    } 
+    public static void criarArquivo(){
+        File arquivo = nomeArquivo();
+        try {
+            if(arquivo.createNewFile()){
+                System.out.println("Arquivo criado com sucesso: " + arquivo.getName());
+            } else {
+                System.out.println("O arquivo já existe.");
+            }
+        }catch (IOException e) {
+            System.out.println("Ocorreu um erro ao criar o arquivo: ");
+        }
+    } 
     public static void deleteArquivo(){
         File arquivo = nomeArquivo();
+      
         if(arquivo.exists()){
-            arquivo.delete();
-            if(arquivo.exists() == false){
+            System.out.println("Tem certeza que deseja deletar o arquivo" + arquivo.getName() + "? (S/N)");
+            Scanner leitor = new Scanner(System.in);
+            String resposta = leitor.nextLine();
+            
+            if(arquivo.exists() && resposta.equalsIgnoreCase("S")){
+                arquivo.delete();
                 System.out.println("Arquivo deletado com sucesso: " + arquivo.getName());
             } else {
-                System.out.println("Falha ao deletar o arquivo.");
+                System.out.println("Falha ao deletar o arquivo ou operação cancelada.");
             }
+        } else {
+            System.out.println("O arquivo não existe.");
         }
     }
     public static void lerArquivo(){
@@ -116,7 +129,7 @@ public class Gerenc_Arc {
              nomeArquivo = nomeArquivo + ".txt";
         }
         File arquivo = new File(nomeArquivo);
-        leitor.close();
+        
         return arquivo;
     }
     
