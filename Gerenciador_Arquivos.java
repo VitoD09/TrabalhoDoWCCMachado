@@ -1,92 +1,89 @@
-import java.util.Scanner;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Scanner;
 
 public class Gerenc_Arc {
     public static void main(String[] args) {
         Scanner leitor = new Scanner(System.in);
-        int escolha;
-        do{
         System.out.print("""
-            =============================== 
-                Gerenciador de Arquivos
-            ===============================
-             1. Criar um novo arquivo
-             2. Editar um arquivo existente
-             3. Deletar um arquivo
-             4. Ler um arquivo
-             5. Sair
-            ===============================
-            escolha uma opção:
-                """);
-        escolha = leitor.nextInt();
+                ===============================
+                    Gerenciador de Arquivos
+                ===============================
+                 1. Criar um novo arquivo
+                 2. Editar um arquivo existente
+                 3. Deletar um arquivo
+                 4. Ler um arquivo
+                 5. Sair
+                ===============================
+                escolha uma opção:
+                    """);
+        int escolha = leitor.nextInt();
         leitor.nextLine();
 
-        if(escolha == 1){
-            criarArquivo()
-            ;
-    }     else if(escolha == 2){
+        if (escolha == 1) {
+            criarArquivo();
+        } else if (escolha == 2) {
             EditarArquivo();
-        }
-        else if(escolha == 3){
+        } else if (escolha == 3) {
             deleteArquivo();
-        }
-        else if(escolha == 4){
+        } else if (escolha == 4) {
             lerArquivo();
-        }else if(escolha == 5){
+        } else if (escolha == 5) {
             System.out.println("Pograma finalizado");
-        }
-        else {
+        } else {
             System.out.println("Opção inválida. Por favor, escolha uma opção entre 1 e 5.");
         }
-    } while(escolha != 5);
         leitor.close();
-        System.out.println("");
+
     }
+
     public static void EditarArquivo() {
         File arquivo = nomeArquivo();
 
-        if(arquivo.exists()){
+        if (arquivo.exists()) {
             Scanner Escrever = new Scanner(System.in);
             System.out.println("Digite o conteúdo a ser adicionado ao arquivo: ");
             String conteudo = Escrever.nextLine();
             try {
-                java.io.FileWriter escritor = new java.io.FileWriter(arquivo, true);
+                FileWriter escritor = new FileWriter(arquivo, true);
                 escritor.write(conteudo + System.lineSeparator());
                 escritor.close();
                 System.out.println("Conteúdo adicionado ao arquivo com sucesso.");
-            } 
-             catch (IOException e) {
-                 System.out.println("Ocorreu um erro ao escrever no arquivo: " + e.getMessage());
+            } catch (IOException e) {
+                System.out.println("Ocorreu um erro ao escrever no arquivo: " + e.getMessage());
 
             }
-           
-         } else {
-                System.out.println("O arquivo não existe.");
-                return;
-            }     
-    } 
-    public static void criarArquivo(){
+
+        } else {
+            System.out.println("O arquivo não existe.");
+            return;
+        }
+
+    }
+
+    public static void criarArquivo() {
         File arquivo = nomeArquivo();
         try {
-            if(arquivo.createNewFile()){
+            if (arquivo.createNewFile()) {
                 System.out.println("Arquivo criado com sucesso: " + arquivo.getName());
             } else {
                 System.out.println("O arquivo já existe.");
             }
-        }catch (IOException e) {
+        } catch (IOException e) {
             System.out.println("Ocorreu um erro ao criar o arquivo: ");
         }
-    } 
-    public static void deleteArquivo(){
+    }
+
+    public static void deleteArquivo() {
         File arquivo = nomeArquivo();
-      
-        if(arquivo.exists()){
-            System.out.println("Tem certeza que deseja deletar o arquivo" + arquivo.getName() + "? (S/N)");
+
+        if (arquivo.exists()) {
+            System.out.println("Tem certeza que deseja deletar o arquivo " + arquivo.getName() + "? (S/N)");
             Scanner leitor = new Scanner(System.in);
             String resposta = leitor.nextLine();
-            
-            if(arquivo.exists() && resposta.equalsIgnoreCase("S")){
+
+            if (arquivo.exists() && resposta.equalsIgnoreCase("S")) {
                 arquivo.delete();
                 System.out.println("Arquivo deletado com sucesso: " + arquivo.getName());
             } else {
@@ -96,41 +93,42 @@ public class Gerenc_Arc {
             System.out.println("O arquivo não existe.");
         }
     }
-    public static void lerArquivo(){
+
+    public static void lerArquivo() {
         File arquivo = nomeArquivo();
 
-        try{
+        try {
             Scanner leitor = new Scanner(arquivo);
-            while(leitor.hasNextLine()){
-                if(leitor.hasNextLine()){
+            while (leitor.hasNextLine()) {
+                if (leitor.hasNextLine()) {
                     String linha = leitor.nextLine();
                     System.out.println(linha);
                 } else {
                     break;
                 }
             }
-                leitor.close();
+            leitor.close();
         } catch (IOException e) {
             System.out.println("Ocorreu um erro ao ler o arquivo: ");
         }
-        
-        
+
     }
-    public static  File nomeArquivo(){
+
+    public static File nomeArquivo() {
         System.out.print("Digite o nome do arquivo: ");
         Scanner leitor = new Scanner(System.in);
         String nomeArquivo = leitor.nextLine();
 
-        while(nomeArquivo.isEmpty()){
+        while (nomeArquivo.isEmpty()) {
             System.out.print("Nome do arquivo não pode ser vazio. Digite novamente: ");
             nomeArquivo = leitor.nextLine();
         }
         if (!nomeArquivo.endsWith(".txt")) {
-             nomeArquivo = nomeArquivo + ".txt";
+            nomeArquivo = nomeArquivo + ".txt";
         }
         File arquivo = new File(nomeArquivo);
-        
+
         return arquivo;
     }
-    
+
 }
