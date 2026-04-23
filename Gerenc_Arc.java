@@ -1,24 +1,23 @@
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class Gerenc_Arc {
     public static void main(String[] args) {
         int escolha = 0;
-        // CORREÇÃO: Scanner principal aberto apenas UMA vez, fora do loop
-        Scanner leitor = new Scanner(System.in); 
+        Scanner leitor = new Scanner(System.in);
 
-        while (escolha != 6) { 
+        while (escolha != 6) {
             System.out.print("""
                     ===============================
                         Gerenciador de Arquivos
                     ===============================
                      1. Criar um novo arquivo
-                     2. Adicionar registro (Tabela)
-                     3. Editar um registro (Por ID)
+                     2. Adicionar registro 
+                     3. Editar um registro
                      4. Deletar um arquivo
                      5. Ler um arquivo
                      6. Sair
@@ -26,50 +25,46 @@ public class Gerenc_Arc {
                     escolha uma opção:
                         """);
             escolha = leitor.nextInt();
-            leitor.nextLine(); // Limpa o buffer do enter
+            leitor.nextLine();
 
             if (escolha == 1) {
                 criarArquivo();
             } else if (escolha == 2) {
-                adicionarRegistro(); // Antigo EditarArquivo (agora focado em tabela)
+                adicionarRegistro();
             } else if (escolha == 3) {
-                editarRegistroReal(); // Nova lógica do "caderno"
+                editarRegistroReal();
             } else if (escolha == 4) {
                 deleteArquivo();
             } else if (escolha == 5) {
-                lerArquivo(); // Atualizado com split
+                lerArquivo();
             } else if (escolha == 6) {
                 System.out.println("Programa finalizado");
             } else {
                 System.out.println("Opção inválida. Por favor, escolha uma opção entre 1 e 6.");
             }
         }
-        // CORREÇÃO: Fechamos o leitor só quando o loop acaba de vez
-        leitor.close(); 
+        leitor.close();
     }
 
-    // MODIFICADO: Pede os dados separados e salva no padrão id;nome;idade
     public static void adicionarRegistro() {
         File arquivo = nomeArquivo();
 
         if (arquivo.exists()) {
             Scanner escrever = new Scanner(System.in);
-            
-            System.out.print("Digite o ID (número): ");
+
+            System.out.print("Digite o ID: ");
             String id = escrever.nextLine();
-            
+
             System.out.print("Digite o Nome: ");
             String nome = escrever.nextLine();
-            
-            System.out.print("Digite a Idade (número): ");
+
+            System.out.print("Digite a Idade: ");
             String idade = escrever.nextLine();
 
-            // Força o padrão da tabela
             String conteudo = id + ";" + nome + ";" + idade;
 
             try {
-                // true = adiciona ao final sem apagar o resto
-                FileWriter escritor = new FileWriter(arquivo, true); 
+                FileWriter escritor = new FileWriter(arquivo, true);
                 escritor.write(conteudo + System.lineSeparator());
                 escritor.close();
                 System.out.println("Registro adicionado à tabela com sucesso.");
@@ -81,7 +76,6 @@ public class Gerenc_Arc {
         }
     }
 
-    // NOVO: A lógica de achar a linha pelo ID, trocar e reescrever
     public static void editarRegistroReal() {
         File arquivo = nomeArquivo();
 
@@ -98,7 +92,6 @@ public class Gerenc_Arc {
         boolean idEncontrado = false;
 
         try {
-            // 1. Lê tudo e modifica apenas a linha certa
             Scanner leitorArquivo = new Scanner(arquivo);
             while (leitorArquivo.hasNextLine()) {
                 String linha = leitorArquivo.nextLine();
@@ -110,11 +103,9 @@ public class Gerenc_Arc {
                     String novoNome = teclado.nextLine();
                     System.out.print("Digite a NOVA Idade: ");
                     String novaIdade = teclado.nextLine();
-                    
-                    // Monta a linha atualizada e joga na memória
+
                     linhasEmMemoria.add(idProcurado + ";" + novoNome + ";" + novaIdade);
                 } else {
-                    // Mantém a linha original na memória
                     linhasEmMemoria.add(linha);
                 }
             }
@@ -125,7 +116,6 @@ public class Gerenc_Arc {
                 return;
             }
 
-            // 2. Reescreve o arquivo inteiro (FileWriter sem o 'true')
             FileWriter escritor = new FileWriter(arquivo);
             for (String linhaAtualizada : linhasEmMemoria) {
                 escritor.write(linhaAtualizada + System.lineSeparator());
@@ -170,7 +160,6 @@ public class Gerenc_Arc {
         }
     }
 
-    // MODIFICADO: Usa split(";") para exibir bonitinho
     public static void lerArquivo() {
         File arquivo = nomeArquivo();
 
