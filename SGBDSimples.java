@@ -26,11 +26,14 @@ import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 public class Gerenc_Arc extends JFrame {
-    private String pastaRaiz = "meus_bancos";
+    private String pastaRaiz = System.getProperty("user.home") + java.io.File.separator + "Documents"
+            + java.io.File.separator + "Meus_Bancos";
     private File bancoAtual = null;
 
     // Componentes da Interface
@@ -48,6 +51,12 @@ public class Gerenc_Arc extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
+        // --- PALETA DE CORES ---
+        Color fundoEscuro = new Color(18, 18, 18);
+        Color fundoMedio = new Color(30, 30, 30);
+        Color laranjaGamer = new Color(255, 130, 0);
+        Color textoClaro = new Color(230, 230, 230);
+
         // Cria a pasta raiz se não existir
         new File(pastaRaiz).mkdirs();
 
@@ -56,19 +65,24 @@ public class Gerenc_Arc extends JFrame {
         // ==========================================
         JPanel painelEsquerdo = new JPanel(new BorderLayout());
         painelEsquerdo.setPreferredSize(new Dimension(220, 0));
-        painelEsquerdo.setBackground(new Color(40, 44, 52));
+        painelEsquerdo.setBackground(fundoEscuro);
         painelEsquerdo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JPanel painelSeletor = new JPanel(new BorderLayout(0, 5));
         painelSeletor.setOpaque(false);
         JLabel lblBancos = new JLabel("Bancos de Dados:");
-        lblBancos.setForeground(Color.WHITE);
+        lblBancos.setForeground(laranjaGamer);
 
         cbBancos = new JComboBox<>();
+        cbBancos.setBackground(fundoMedio);
+        cbBancos.setForeground(textoClaro);
         carregarBancos();
         cbBancos.addActionListener(e -> selecionarBanco());
 
         JButton btnNovoBanco = new JButton("Novo Banco");
+        btnNovoBanco.setBackground(laranjaGamer);
+        btnNovoBanco.setForeground(Color.BLACK);
+        btnNovoBanco.setFocusPainted(false);
         btnNovoBanco.addActionListener(e -> criarNovoBanco());
 
         painelSeletor.add(lblBancos, BorderLayout.NORTH);
@@ -80,20 +94,25 @@ public class Gerenc_Arc extends JFrame {
         painelTabelas.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
 
         JLabel lblTabelas = new JLabel("Tabelas:");
-        lblTabelas.setForeground(Color.WHITE);
+        lblTabelas.setForeground(laranjaGamer);
 
         modeloTabelas = new DefaultListModel<>();
         listaTabelas = new JList<>(modeloTabelas);
-        listaTabelas.setBackground(new Color(33, 37, 43));
-        listaTabelas.setForeground(new Color(171, 178, 191));
+        listaTabelas.setBackground(fundoMedio);
+        listaTabelas.setForeground(textoClaro);
+        listaTabelas.setSelectionBackground(laranjaGamer);
+        listaTabelas.setSelectionForeground(Color.BLACK);
         listaTabelas.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && listaTabelas.getSelectedValue() != null) {
                 carregarDadosDaTabela(listaTabelas.getSelectedValue());
             }
         });
 
+        JScrollPane scrollTabelas = new JScrollPane(listaTabelas);
+        scrollTabelas.setBorder(BorderFactory.createLineBorder(laranjaGamer, 1));
+
         painelTabelas.add(lblTabelas, BorderLayout.NORTH);
-        painelTabelas.add(new JScrollPane(listaTabelas), BorderLayout.CENTER);
+        painelTabelas.add(scrollTabelas, BorderLayout.CENTER);
 
         painelEsquerdo.add(painelSeletor, BorderLayout.NORTH);
         painelEsquerdo.add(painelTabelas, BorderLayout.CENTER);
@@ -102,16 +121,17 @@ public class Gerenc_Arc extends JFrame {
         // 2. PAINEL CENTRAL (Grade de Dados)
         // ==========================================
         JPanel painelCentral = new JPanel(new BorderLayout());
-        painelCentral.setBackground(new Color(24, 26, 31));
+        painelCentral.setBackground(fundoEscuro);
 
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
-        toolBar.setBackground(new Color(50, 56, 66));
+        toolBar.setBackground(fundoMedio);
+        toolBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, laranjaGamer));
 
-        JButton btnNovaTabela = new JButton("📝 Nova Tabela");
-        JButton btnInserir = new JButton("➕ Inserir Registro");
-        JButton btnAddColuna = new JButton("🛠️ Adicionar Coluna");
-        JButton btnAtualizar = new JButton("🔄 Atualizar Grade");
+        JButton btnNovaTabela = criarBotaoToolBar("📝 Nova Tabela", laranjaGamer);
+        JButton btnInserir = criarBotaoToolBar("➕ Inserir Registro", laranjaGamer);
+        JButton btnAddColuna = criarBotaoToolBar("🛠️ Adicionar Coluna", laranjaGamer);
+        JButton btnAtualizar = criarBotaoToolBar("🔄 Atualizar Grade", laranjaGamer);
 
         btnNovaTabela.addActionListener(e -> criarNovaTabela());
         btnInserir.addActionListener(e -> inserirRegistroDinamicamente());
@@ -135,23 +155,60 @@ public class Gerenc_Arc extends JFrame {
         tabelaDados.setRowHeight(25);
         tabelaDados.getTableHeader().setReorderingAllowed(false);
 
+        // Estilizando a Tabela
+        tabelaDados.setBackground(fundoMedio);
+        tabelaDados.setForeground(textoClaro);
+        tabelaDados.setGridColor(fundoEscuro);
+        tabelaDados.setSelectionBackground(laranjaGamer);
+        tabelaDados.setSelectionForeground(Color.BLACK);
+
+        // Estilizando o Cabeçalho da Tabela
+        tabelaDados.getTableHeader().setBackground(laranjaGamer);
+        tabelaDados.getTableHeader().setForeground(Color.BLACK);
+        tabelaDados.getTableHeader().setFont(tabelaDados.getFont().deriveFont(java.awt.Font.BOLD));
+        DefaultTableCellRenderer centralizado = new DefaultTableCellRenderer();
+        centralizado.setHorizontalAlignment(SwingConstants.CENTER);
+        tabelaDados.setDefaultRenderer(Object.class, centralizado);
+
+        JScrollPane scrollTabelaDados = new JScrollPane(tabelaDados);
+        scrollTabelaDados.setBorder(BorderFactory.createEmptyBorder());
+        scrollTabelaDados.getViewport().setBackground(fundoEscuro);
+
         painelCentral.add(toolBar, BorderLayout.NORTH);
-        painelCentral.add(new JScrollPane(tabelaDados), BorderLayout.CENTER);
+        painelCentral.add(scrollTabelaDados, BorderLayout.CENTER);
 
         // ==========================================
         // 3. BARRA DE STATUS (Rodapé)
         // ==========================================
         lblStatus = new JLabel(" Pronto. Selecione ou crie um banco de dados.");
-        lblStatus.setBorder(BorderFactory.createBevelBorder(1));
+        lblStatus.setOpaque(true);
+        lblStatus.setBackground(fundoEscuro);
+        lblStatus.setForeground(laranjaGamer);
+        lblStatus.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, laranjaGamer));
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, painelEsquerdo, painelCentral);
         splitPane.setDividerLocation(220);
+        splitPane.setBorder(null);
+        splitPane.setDividerSize(3);
+        splitPane.setBackground(fundoEscuro);
 
         add(splitPane, BorderLayout.CENTER);
         add(lblStatus, BorderLayout.SOUTH);
+
+        // Fundo geral do JFrame
+        getContentPane().setBackground(fundoEscuro);
     }
 
-    // --- MÉTODOS DE LÓGICA ---
+    // Método auxiliar para criar os botões da ToolBar estilizados
+    private JButton criarBotaoToolBar(String texto, Color corTexto) {
+        JButton btn = new JButton(texto);
+        btn.setForeground(corTexto);
+        btn.setBackground(new Color(40, 40, 40));
+        btn.setFocusPainted(false);
+        return btn;
+    }
+
+    // --- MÉTODOS DE LÓGICA (Mantidos iguais ao original) ---
 
     private void carregarBancos() {
         cbBancos.removeAllItems();
@@ -199,7 +256,6 @@ public class Gerenc_Arc extends JFrame {
         }
     }
 
-    // --- LÓGICA ATUALIZADA: ID CRIADO AUTOMATICAMENTE ---
     private void criarNovaTabela() {
         if (bancoAtual == null) {
             JOptionPane.showMessageDialog(this, "Selecione um banco primeiro!");
@@ -210,23 +266,20 @@ public class Gerenc_Arc extends JFrame {
         if (nome == null || nome.trim().isEmpty())
             return;
 
-        // O texto agora avisa que o ID já está garantido
         String colunas = JOptionPane.showInputDialog(this,
-                "A coluna 'id' será criada AUTOMATICAMENTE.\nDefina apenas as demais colunas (ex: nome;funcao):");
+                "Defina as colunas da tabela (ex: nome;funcao):");
 
         if (colunas == null)
-            return; // Se o usuário clicar em cancelar
+            return;
 
         String estruturaFinal;
         if (colunas.trim().isEmpty()) {
-            estruturaFinal = "id"; // Se ele não digitar nada, cria a tabela só com ID
+            estruturaFinal = "id";
         } else {
-            // Tratamento de erro: se o usuário digitar "id" por costume, a gente não
-            // duplica
             if (colunas.toLowerCase().startsWith("id;")) {
                 estruturaFinal = colunas;
             } else {
-                estruturaFinal = "id;" + colunas; // Adiciona o ID no começo da string
+                estruturaFinal = "id;" + colunas;
             }
         }
 
@@ -294,6 +347,11 @@ public class Gerenc_Arc extends JFrame {
                 camposTexto[i].setBackground(new Color(220, 220, 220));
             } else {
                 camposTexto[i] = new JTextField();
+
+                // === ADICIONE ESTA LINHA PARA O ADVANCE FOCUS ===
+                // Quando o Enter for pressionado, o foco é transferido para o próximo
+                // componente
+                camposTexto[i].addActionListener(e -> ((JTextField) e.getSource()).transferFocus());
             }
             painelForm.add(camposTexto[i]);
         }
