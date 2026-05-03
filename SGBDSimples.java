@@ -2,13 +2,11 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Vector;
 
@@ -32,400 +30,294 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 public class Gerenc_Arc extends JFrame {
-    private String pastaRaiz = System.getProperty("user.home") + java.io.File.separator + "Documents"
-            + java.io.File.separator + "Meus_Bancos";
-    private File bancoAtual = null;
 
-    // Componentes da Interface
-    private JComboBox<String> cbBancos;
-    private DefaultListModel<String> modeloTabelas;
-    private JList<String> listaTabelas;
-    private JTable tabelaDados;
-    private DefaultTableModel modeloTabelaDados;
-    private JLabel lblStatus;
+    public static class Tema {
+        public static final Color FUNDO = new Color(40, 42, 54);
+        public static final Color PAINEL = new Color(68, 71, 90);
+        public static final Color SIDEBAR = new Color(33, 34, 44);
+        public static final Color TEXTO = new Color(248, 248, 242);
+        public static final Color DESTAQUE = new Color(189, 147, 249);
+    }
+
+    private String pastaRaiz = System.getProperty("user.home") + File.separator + "Documents" + File.separator
+            + "Meus_Bancos";
+    private File bancoAtual = null;
+    private JComboBox<String> cbBancos = new JComboBox<>();
+    private DefaultListModel<String> modTabelas = new DefaultListModel<>();
+    private JList<String> listaTabelas = new JList<>(modTabelas);
+    private DefaultTableModel modDados = new DefaultTableModel();
+    private JTable tabelaDados = new JTable(modDados);
+    private JLabel lblStatus = new JLabel(" Pronto. Selecione ou crie um banco de dados.");
 
     public Gerenc_Arc() {
-        setTitle("SGBD Java - MySQL Style (Auto-ID)");
+        setTitle("SGBD Java - MySQL Style");
         setSize(950, 600);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
-
-        // --- PALETA DE CORES ---
-        Color fundoEscuro = new Color(18, 18, 18);
-        Color fundoMedio = new Color(30, 30, 30);
-        Color laranjaGamer = new Color(255, 130, 0);
-        Color textoClaro = new Color(230, 230, 230);
-
-        // Cria a pasta raiz se não existir
         new File(pastaRaiz).mkdirs();
 
-        // ==========================================
-        // 1. PAINEL ESQUERDO (Navegador de Bancos)
-        // ==========================================
-        JPanel painelEsquerdo = new JPanel(new BorderLayout());
-        painelEsquerdo.setPreferredSize(new Dimension(220, 0));
-        painelEsquerdo.setBackground(fundoEscuro);
-        painelEsquerdo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JSplitPane divisoria = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, montarEsquerda(), montarCentro());
+        divisoria.setDividerLocation(220);
+        divisoria.setDividerSize(3);
+        divisoria.setBorder(null);
 
-        JPanel painelSeletor = new JPanel(new BorderLayout(0, 5));
-        painelSeletor.setOpaque(false);
+        lblStatus.setOpaque(true);
+        lblStatus.setBackground(Tema.SIDEBAR);
+        lblStatus.setForeground(Tema.DESTAQUE);
+        lblStatus.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Tema.PAINEL));
+
+        add(divisoria, BorderLayout.CENTER);
+        add(lblStatus, BorderLayout.SOUTH);
+    }
+
+    private JPanel montarEsquerda() {
+        JPanel painel = new JPanel(new BorderLayout());
+        painel.setPreferredSize(new Dimension(220, 0));
+        painel.setBackground(Tema.SIDEBAR);
+        painel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JPanel pSeletor = new JPanel(new BorderLayout(0, 5));
+        pSeletor.setOpaque(false);
         JLabel lblBancos = new JLabel("Bancos de Dados:");
-        lblBancos.setForeground(laranjaGamer);
-
-        cbBancos = new JComboBox<>();
-        cbBancos.setBackground(fundoMedio);
-        cbBancos.setForeground(textoClaro);
-        carregarBancos();
+        lblBancos.setForeground(Tema.DESTAQUE);
+        cbBancos.setBackground(Tema.PAINEL);
+        cbBancos.setForeground(Tema.TEXTO);
         cbBancos.addActionListener(e -> selecionarBanco());
+        carregarBancos();
 
-        JButton btnNovoBanco = new JButton("Novo Banco");
-        btnNovoBanco.setBackground(laranjaGamer);
-        btnNovoBanco.setForeground(Color.BLACK);
-        btnNovoBanco.setFocusPainted(false);
-        btnNovoBanco.addActionListener(e -> criarNovoBanco());
+        JButton btnNovo = criarBotao("Novo Banco");
+        btnNovo.addActionListener(e -> criarNovoBanco());
+        pSeletor.add(lblBancos, BorderLayout.NORTH);
+        pSeletor.add(cbBancos, BorderLayout.CENTER);
+        pSeletor.add(btnNovo, BorderLayout.SOUTH);
 
-        painelSeletor.add(lblBancos, BorderLayout.NORTH);
-        painelSeletor.add(cbBancos, BorderLayout.CENTER);
-        painelSeletor.add(btnNovoBanco, BorderLayout.SOUTH);
+        JPanel pTabelas = new JPanel(new BorderLayout(0, 5));
+        pTabelas.setOpaque(false);
+        pTabelas.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+        JLabel lblTab = new JLabel("Tabelas:");
+        lblTab.setForeground(Tema.DESTAQUE);
 
-        JPanel painelTabelas = new JPanel(new BorderLayout(0, 5));
-        painelTabelas.setOpaque(false);
-        painelTabelas.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
-
-        JLabel lblTabelas = new JLabel("Tabelas:");
-        lblTabelas.setForeground(laranjaGamer);
-
-        modeloTabelas = new DefaultListModel<>();
-        listaTabelas = new JList<>(modeloTabelas);
-        listaTabelas.setBackground(fundoMedio);
-        listaTabelas.setForeground(textoClaro);
-        listaTabelas.setSelectionBackground(laranjaGamer);
-        listaTabelas.setSelectionForeground(Color.BLACK);
+        listaTabelas.setBackground(Tema.PAINEL);
+        listaTabelas.setForeground(Tema.TEXTO);
+        listaTabelas.setSelectionBackground(Tema.DESTAQUE);
+        listaTabelas.setSelectionForeground(Tema.FUNDO);
         listaTabelas.addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting() && listaTabelas.getSelectedValue() != null) {
-                carregarDadosDaTabela(listaTabelas.getSelectedValue());
-            }
+            if (!e.getValueIsAdjusting() && listaTabelas.getSelectedValue() != null)
+                carregarDados(listaTabelas.getSelectedValue());
         });
 
-        JScrollPane scrollTabelas = new JScrollPane(listaTabelas);
-        scrollTabelas.setBorder(BorderFactory.createLineBorder(laranjaGamer, 1));
+        JScrollPane scroll = new JScrollPane(listaTabelas);
+        scroll.setBorder(BorderFactory.createLineBorder(Tema.PAINEL, 1));
+        pTabelas.add(lblTab, BorderLayout.NORTH);
+        pTabelas.add(scroll, BorderLayout.CENTER);
 
-        painelTabelas.add(lblTabelas, BorderLayout.NORTH);
-        painelTabelas.add(scrollTabelas, BorderLayout.CENTER);
+        painel.add(pSeletor, BorderLayout.NORTH);
+        painel.add(pTabelas, BorderLayout.CENTER);
+        return painel;
+    }
 
-        painelEsquerdo.add(painelSeletor, BorderLayout.NORTH);
-        painelEsquerdo.add(painelTabelas, BorderLayout.CENTER);
-
-        // ==========================================
-        // 2. PAINEL CENTRAL (Grade de Dados)
-        // ==========================================
-        JPanel painelCentral = new JPanel(new BorderLayout());
-        painelCentral.setBackground(fundoEscuro);
+    private JPanel montarCentro() {
+        JPanel painel = new JPanel(new BorderLayout());
+        painel.setBackground(Tema.FUNDO);
 
         JToolBar toolBar = new JToolBar();
+        toolBar.setBackground(Tema.PAINEL);
         toolBar.setFloatable(false);
-        toolBar.setBackground(fundoMedio);
-        toolBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, laranjaGamer));
+        toolBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Tema.PAINEL));
 
-        JButton btnNovaTabela = criarBotaoToolBar("📝 Nova Tabela", laranjaGamer);
-        JButton btnInserir = criarBotaoToolBar("➕ Inserir Registro", laranjaGamer);
-        JButton btnAddColuna = criarBotaoToolBar("🛠️ Adicionar Coluna", laranjaGamer);
-        JButton btnAtualizar = criarBotaoToolBar("🔄 Atualizar Grade", laranjaGamer);
-
-        btnNovaTabela.addActionListener(e -> criarNovaTabela());
-        btnInserir.addActionListener(e -> inserirRegistroDinamicamente());
-        btnAddColuna.addActionListener(e -> adicionarNovaColuna());
+        JButton btnNovaTab = criarBotao("📝 Nova Tabela");
+        btnNovaTab.addActionListener(e -> criarNovaTabela());
+        JButton btnInserir = criarBotao("➕ Inserir Registro");
+        btnInserir.addActionListener(e -> inserirRegistro());
+        JButton btnAddCol = criarBotao("🛠️ Adicionar Coluna");
+        btnAddCol.addActionListener(e -> adicionarColuna());
+        JButton btnAtualizar = criarBotao("🔄 Atualizar Grade");
         btnAtualizar.addActionListener(e -> {
-            if (listaTabelas.getSelectedValue() != null) {
-                carregarDadosDaTabela(listaTabelas.getSelectedValue());
-            }
+            if (listaTabelas.getSelectedValue() != null)
+                carregarDados(listaTabelas.getSelectedValue());
         });
 
-        toolBar.add(btnNovaTabela);
+        toolBar.add(btnNovaTab);
         toolBar.addSeparator();
         toolBar.add(btnInserir);
         toolBar.addSeparator();
-        toolBar.add(btnAddColuna);
+        toolBar.add(btnAddCol);
         toolBar.addSeparator();
         toolBar.add(btnAtualizar);
 
-        modeloTabelaDados = new DefaultTableModel();
-        tabelaDados = new JTable(modeloTabelaDados);
         tabelaDados.setRowHeight(25);
         tabelaDados.getTableHeader().setReorderingAllowed(false);
+        tabelaDados.setBackground(Tema.FUNDO);
+        tabelaDados.setForeground(Tema.TEXTO);
+        tabelaDados.setGridColor(Tema.PAINEL);
+        tabelaDados.setSelectionBackground(Tema.DESTAQUE);
+        tabelaDados.setSelectionForeground(Tema.FUNDO);
+        tabelaDados.getTableHeader().setBackground(Tema.PAINEL);
+        tabelaDados.getTableHeader().setForeground(Tema.TEXTO);
 
-        // Estilizando a Tabela
-        tabelaDados.setBackground(fundoMedio);
-        tabelaDados.setForeground(textoClaro);
-        tabelaDados.setGridColor(fundoEscuro);
-        tabelaDados.setSelectionBackground(laranjaGamer);
-        tabelaDados.setSelectionForeground(Color.BLACK);
+        DefaultTableCellRenderer center = new DefaultTableCellRenderer();
+        center.setHorizontalAlignment(SwingConstants.CENTER);
+        tabelaDados.setDefaultRenderer(Object.class, center);
 
-        // Estilizando o Cabeçalho da Tabela
-        tabelaDados.getTableHeader().setBackground(laranjaGamer);
-        tabelaDados.getTableHeader().setForeground(Color.BLACK);
-        tabelaDados.getTableHeader().setFont(tabelaDados.getFont().deriveFont(java.awt.Font.BOLD));
-        DefaultTableCellRenderer centralizado = new DefaultTableCellRenderer();
-        centralizado.setHorizontalAlignment(SwingConstants.CENTER);
-        tabelaDados.setDefaultRenderer(Object.class, centralizado);
+        JScrollPane scroll = new JScrollPane(tabelaDados);
+        scroll.getViewport().setBackground(Tema.FUNDO);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
 
-        JScrollPane scrollTabelaDados = new JScrollPane(tabelaDados);
-        scrollTabelaDados.setBorder(BorderFactory.createEmptyBorder());
-        scrollTabelaDados.getViewport().setBackground(fundoEscuro);
-
-        painelCentral.add(toolBar, BorderLayout.NORTH);
-        painelCentral.add(scrollTabelaDados, BorderLayout.CENTER);
-
-        // ==========================================
-        // 3. BARRA DE STATUS (Rodapé)
-        // ==========================================
-        lblStatus = new JLabel(" Pronto. Selecione ou crie um banco de dados.");
-        lblStatus.setOpaque(true);
-        lblStatus.setBackground(fundoEscuro);
-        lblStatus.setForeground(laranjaGamer);
-        lblStatus.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, laranjaGamer));
-
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, painelEsquerdo, painelCentral);
-        splitPane.setDividerLocation(220);
-        splitPane.setBorder(null);
-        splitPane.setDividerSize(3);
-        splitPane.setBackground(fundoEscuro);
-
-        add(splitPane, BorderLayout.CENTER);
-        add(lblStatus, BorderLayout.SOUTH);
-
-        // Fundo geral do JFrame
-        getContentPane().setBackground(fundoEscuro);
+        painel.add(toolBar, BorderLayout.NORTH);
+        painel.add(scroll, BorderLayout.CENTER);
+        return painel;
     }
 
-    // Método auxiliar para criar os botões da ToolBar estilizados
-    private JButton criarBotaoToolBar(String texto, Color corTexto) {
-        JButton btn = new JButton(texto);
-        btn.setForeground(corTexto);
-        btn.setBackground(new Color(40, 40, 40));
-        btn.setFocusPainted(false);
-        return btn;
+    private JButton criarBotao(String txt) {
+        JButton b = new JButton(txt);
+        b.setForeground(Tema.TEXTO);
+        b.setBackground(Tema.PAINEL);
+        b.setFocusPainted(false);
+        return b;
     }
-
-    // --- MÉTODOS DE LÓGICA (Mantidos iguais ao original) ---
 
     private void carregarBancos() {
         cbBancos.removeAllItems();
-        File raiz = new File(pastaRaiz);
-        File[] pastas = raiz.listFiles(File::isDirectory);
-        if (pastas != null) {
-            for (File p : pastas) {
+        File[] pastas = new File(pastaRaiz).listFiles(File::isDirectory);
+        if (pastas != null)
+            for (File p : pastas)
                 cbBancos.addItem(p.getName());
-            }
-        }
     }
 
     private void selecionarBanco() {
-        String selecionado = (String) cbBancos.getSelectedItem();
-        if (selecionado != null) {
-            bancoAtual = new File(pastaRaiz, selecionado);
-            lblStatus.setText(" Banco selecionado: " + selecionado);
+        String sel = (String) cbBancos.getSelectedItem();
+        if (sel != null) {
+            bancoAtual = new File(pastaRaiz, sel);
+            lblStatus.setText(" Banco selecionado: " + sel);
             carregarTabelas();
         }
     }
 
     private void carregarTabelas() {
-        modeloTabelas.clear();
-        modeloTabelaDados.setRowCount(0);
-        modeloTabelaDados.setColumnCount(0);
-
+        modTabelas.clear();
+        modDados.setRowCount(0);
+        modDados.setColumnCount(0);
         if (bancoAtual != null && bancoAtual.exists()) {
-            File[] arquivos = bancoAtual.listFiles((d, nome) -> nome.endsWith(".txt"));
-            if (arquivos != null) {
-                for (File f : arquivos) {
-                    modeloTabelas.addElement(f.getName());
-                }
-            }
+            File[] arqs = bancoAtual.listFiles((d, n) -> n.endsWith(".txt"));
+            if (arqs != null)
+                for (File f : arqs)
+                    modTabelas.addElement(f.getName());
         }
     }
 
     private void criarNovoBanco() {
-        String nome = JOptionPane.showInputDialog(this, "Nome do novo banco de dados:");
-        if (nome != null && !nome.trim().isEmpty()) {
-            File novaPasta = new File(pastaRaiz, nome);
-            if (novaPasta.mkdir()) {
-                carregarBancos();
-                cbBancos.setSelectedItem(nome);
-            }
+        String nome = JOptionPane.showInputDialog(this, "Nome do novo banco:");
+        if (nome != null && !nome.trim().isEmpty() && new File(pastaRaiz, nome).mkdir()) {
+            carregarBancos();
+            cbBancos.setSelectedItem(nome);
         }
     }
 
     private void criarNovaTabela() {
-        if (bancoAtual == null) {
-            JOptionPane.showMessageDialog(this, "Selecione um banco primeiro!");
+        if (bancoAtual == null)
             return;
-        }
-
         String nome = JOptionPane.showInputDialog(this, "Nome da tabela:");
         if (nome == null || nome.trim().isEmpty())
             return;
-
-        String colunas = JOptionPane.showInputDialog(this,
-                "Defina as colunas da tabela (ex: nome;funcao):");
-
-        if (colunas == null)
+        String cols = JOptionPane.showInputDialog(this, "Colunas (ex: nome;funcao):");
+        if (cols == null)
             return;
 
-        String estruturaFinal;
-        if (colunas.trim().isEmpty()) {
-            estruturaFinal = "id";
-        } else {
-            if (colunas.toLowerCase().startsWith("id;")) {
-                estruturaFinal = colunas;
-            } else {
-                estruturaFinal = "id;" + colunas;
-            }
-        }
-
-        File arquivo = new File(bancoAtual, nome + ".txt");
-        try (FileWriter fw = new FileWriter(arquivo)) {
-            fw.write(estruturaFinal + "\n");
-            lblStatus.setText(" Tabela " + nome + " criada com a estrutura: " + estruturaFinal);
+        String estr = cols.trim().isEmpty() ? "id" : (cols.toLowerCase().startsWith("id;") ? cols : "id;" + cols);
+        try {
+            Files.writeString(new File(bancoAtual, nome + ".txt").toPath(), estr + "\n");
+            lblStatus.setText(" Tabela " + nome + " criada.");
             carregarTabelas();
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Erro: " + e.getMessage());
         }
     }
 
-    private void carregarDadosDaTabela(String nomeArquivo) {
-        File arquivo = new File(bancoAtual, nomeArquivo);
-        modeloTabelaDados.setRowCount(0);
-        modeloTabelaDados.setColumnCount(0);
-
-        try (BufferedReader br = new BufferedReader(new FileReader(arquivo))) {
-            String cabecalho = br.readLine();
-            if (cabecalho != null) {
-                String[] colunas = cabecalho.split(";");
-                for (String col : colunas) {
-                    modeloTabelaDados.addColumn(col);
-                }
-
-                String linha;
-                int count = 0;
-                while ((linha = br.readLine()) != null) {
-                    if (!linha.trim().isEmpty()) {
-                        String[] dados = linha.split(";", -1);
-                        modeloTabelaDados.addRow(dados);
-                        count++;
-                    }
-                }
-                lblStatus.setText(" Tabela carregada: " + count + " registro(s) retornado(s).");
-            }
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Erro ao ler dados: " + e.getMessage());
-        }
-    }
-
-    private void inserirRegistroDinamicamente() {
-        String tabelaSelecionada = listaTabelas.getSelectedValue();
-        if (bancoAtual == null || tabelaSelecionada == null) {
-            JOptionPane.showMessageDialog(this, "Selecione uma tabela na lista à esquerda primeiro.");
-            return;
-        }
-
-        int qtdColunas = modeloTabelaDados.getColumnCount();
-        if (qtdColunas == 0)
-            return;
-
-        JPanel painelForm = new JPanel(new GridLayout(qtdColunas, 2, 5, 5));
-        JTextField[] camposTexto = new JTextField[qtdColunas];
-
-        for (int i = 0; i < qtdColunas; i++) {
-            String nomeDaColuna = modeloTabelaDados.getColumnName(i);
-            painelForm.add(new JLabel(nomeDaColuna + ":"));
-
-            if (i == 0 && nomeDaColuna.equalsIgnoreCase("id")) {
-                int proximoId = modeloTabelaDados.getRowCount() + 1;
-                camposTexto[i] = new JTextField(String.valueOf(proximoId));
-                camposTexto[i].setEditable(false);
-                camposTexto[i].setBackground(new Color(220, 220, 220));
-            } else {
-                camposTexto[i] = new JTextField();
-
-                // === ADICIONE ESTA LINHA PARA O ADVANCE FOCUS ===
-                // Quando o Enter for pressionado, o foco é transferido para o próximo
-                // componente
-                camposTexto[i].addActionListener(e -> ((JTextField) e.getSource()).transferFocus());
-            }
-            painelForm.add(camposTexto[i]);
-        }
-
-        int resultado = JOptionPane.showConfirmDialog(this, painelForm, "Inserir Novo Registro",
-                JOptionPane.OK_CANCEL_OPTION);
-
-        if (resultado == JOptionPane.OK_OPTION) {
-            StringBuilder novoRegistro = new StringBuilder();
-            Vector<String> linhaParaGrid = new Vector<>();
-
-            for (int i = 0; i < qtdColunas; i++) {
-                String valor = camposTexto[i].getText().trim();
-                novoRegistro.append(valor);
-                linhaParaGrid.add(valor);
-
-                if (i < qtdColunas - 1) {
-                    novoRegistro.append(";");
-                }
-            }
-
-            File arquivo = new File(bancoAtual, tabelaSelecionada);
-            try (FileWriter fw = new FileWriter(arquivo, true)) {
-                fw.write(novoRegistro.toString() + "\n");
-                modeloTabelaDados.addRow(linhaParaGrid);
-                lblStatus
-                        .setText(" 1 registro inserido com sucesso na tabela " + tabelaSelecionada.replace(".txt", ""));
-            } catch (IOException e) {
-                JOptionPane.showMessageDialog(this, "Erro ao salvar: " + e.getMessage());
-            }
-        }
-    }
-
-    private void adicionarNovaColuna() {
-        String tabelaSelecionada = listaTabelas.getSelectedValue();
-        if (bancoAtual == null || tabelaSelecionada == null) {
-            JOptionPane.showMessageDialog(this, "Selecione uma tabela primeiro para adicionar uma coluna.");
-            return;
-        }
-
-        String novaColuna = JOptionPane.showInputDialog(this, "Digite o nome da nova coluna:");
-        if (novaColuna == null || novaColuna.trim().isEmpty())
-            return;
-
-        File arquivo = new File(bancoAtual, tabelaSelecionada);
+    private void carregarDados(String arquivo) {
+        modDados.setRowCount(0);
+        modDados.setColumnCount(0);
         try {
-            List<String> linhasAtualizadas = new ArrayList<>();
-            BufferedReader br = new BufferedReader(new FileReader(arquivo));
-            String linha;
-            boolean primeiraLinha = true;
-
-            while ((linha = br.readLine()) != null) {
-                if (primeiraLinha) {
-                    linhasAtualizadas.add(linha + ";" + novaColuna);
-                    primeiraLinha = false;
-                } else {
-                    linhasAtualizadas.add(linha + ";");
-                }
+            List<String> linhas = Files.readAllLines(new File(bancoAtual, arquivo).toPath());
+            if (linhas.isEmpty())
+                return;
+            for (String col : linhas.get(0).split(";"))
+                modDados.addColumn(col);
+            for (int i = 1; i < linhas.size(); i++) {
+                if (!linhas.get(i).trim().isEmpty())
+                    modDados.addRow(linhas.get(i).split(";", -1));
             }
-            br.close();
-
-            BufferedWriter bw = new BufferedWriter(new FileWriter(arquivo));
-            for (String l : linhasAtualizadas) {
-                bw.write(l);
-                bw.newLine();
-            }
-            bw.close();
-
-            carregarDadosDaTabela(tabelaSelecionada);
-            lblStatus.setText(
-                    " Coluna '" + novaColuna + "' adicionada à tabela " + tabelaSelecionada.replace(".txt", ""));
-
+            lblStatus.setText(" " + (linhas.size() - 1) + " registro(s) carregado(s).");
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Erro ao adicionar coluna: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Erro: " + e.getMessage());
+        }
+    }
+
+    private void inserirRegistro() {
+        String tab = listaTabelas.getSelectedValue();
+        int qtdCol = modDados.getColumnCount();
+        if (bancoAtual == null || tab == null || qtdCol == 0)
+            return;
+
+        JPanel pForm = new JPanel(new GridLayout(qtdCol, 2, 5, 5));
+        pForm.setBackground(Tema.PAINEL);
+        JTextField[] campos = new JTextField[qtdCol];
+
+        for (int i = 0; i < qtdCol; i++) {
+            String nomeCol = modDados.getColumnName(i);
+            JLabel lbl = new JLabel(nomeCol + ":");
+            lbl.setForeground(Tema.TEXTO);
+            pForm.add(lbl);
+
+            campos[i] = new JTextField();
+            campos[i].setForeground(Tema.TEXTO);
+            campos[i].setCaretColor(Tema.TEXTO);
+
+            if (i == 0 && nomeCol.equalsIgnoreCase("id")) {
+                campos[i].setText(String.valueOf(modDados.getRowCount() + 1));
+                campos[i].setBackground(Tema.SIDEBAR);
+                campos[i].setEditable(false);
+            } else {
+                campos[i].setBackground(Tema.FUNDO);
+                campos[i].addActionListener(e -> ((JTextField) e.getSource()).transferFocus());
+            }
+            pForm.add(campos[i]);
+        }
+
+        if (JOptionPane.showConfirmDialog(this, pForm, "Novo Registro", JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION) {
+            Vector<String> linha = new Vector<>();
+            for (JTextField c : campos)
+                linha.add(c.getText().trim());
+            try {
+                Files.writeString(new File(bancoAtual, tab).toPath(), String.join(";", linha) + "\n",
+                        StandardOpenOption.APPEND);
+                modDados.addRow(linha);
+                lblStatus.setText(" Registro inserido.");
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(this, "Erro: " + e.getMessage());
+            }
+        }
+    }
+
+    private void adicionarColuna() {
+        String tab = listaTabelas.getSelectedValue();
+        if (bancoAtual == null || tab == null)
+            return;
+        String novaCol = JOptionPane.showInputDialog(this, "Nome da nova coluna:");
+        if (novaCol == null || novaCol.trim().isEmpty())
+            return;
+
+        try {
+            Path path = new File(bancoAtual, tab).toPath();
+            List<String> linhas = Files.readAllLines(path);
+            for (int i = 0; i < linhas.size(); i++) {
+                linhas.set(i, linhas.get(i) + (i == 0 ? ";" + novaCol : ";"));
+            }
+            Files.write(path, linhas);
+            carregarDados(tab);
+            lblStatus.setText(" Coluna adicionada.");
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Erro: " + e.getMessage());
         }
     }
 
