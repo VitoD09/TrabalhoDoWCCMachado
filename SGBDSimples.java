@@ -5,7 +5,6 @@ import java.awt.GridLayout;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Vector;
@@ -129,8 +128,6 @@ public class Gerenc_Arc extends JFrame {
         btnNovaTab.addActionListener(e -> criarNovaTabela());
         JButton btnInserir = criarBotao("➕ Inserir Registro");
         btnInserir.addActionListener(e -> inserirRegistro());
-        JButton btnAddCol = criarBotao("🛠️ Adicionar Coluna");
-        btnAddCol.addActionListener(e -> adicionarColuna());
         JButton btnAtualizar = criarBotao("🔄 Atualizar Grade");
         btnAtualizar.addActionListener(e -> {
             if (listaTabelas.getSelectedValue() != null)
@@ -140,8 +137,6 @@ public class Gerenc_Arc extends JFrame {
         toolBar.add(btnNovaTab);
         toolBar.addSeparator();
         toolBar.add(btnInserir);
-        toolBar.addSeparator();
-        toolBar.add(btnAddCol);
         toolBar.addSeparator();
         toolBar.add(btnAtualizar);
 
@@ -296,28 +291,6 @@ public class Gerenc_Arc extends JFrame {
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(this, "Erro: " + e.getMessage());
             }
-        }
-    }
-
-    private void adicionarColuna() {
-        String tab = listaTabelas.getSelectedValue();
-        if (bancoAtual == null || tab == null)
-            return;
-        String novaCol = JOptionPane.showInputDialog(this, "Nome da nova coluna:");
-        if (novaCol == null || novaCol.trim().isEmpty())
-            return;
-
-        try {
-            Path path = new File(bancoAtual, tab).toPath();
-            List<String> linhas = Files.readAllLines(path);
-            for (int i = 0; i < linhas.size(); i++) {
-                linhas.set(i, linhas.get(i) + (i == 0 ? ";" + novaCol : ";"));
-            }
-            Files.write(path, linhas);
-            carregarDados(tab);
-            lblStatus.setText(" Coluna adicionada.");
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Erro: " + e.getMessage());
         }
     }
 
