@@ -49,7 +49,7 @@ public class Gerenc_Arc extends JFrame {
     private JLabel lblStatus = new JLabel(" Pronto. Selecione ou crie um banco de dados.");
 
     public Gerenc_Arc() {
-        setTitle("SGBD Java - MySQL Style");
+        setTitle("NanoDB");
         setSize(950, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
