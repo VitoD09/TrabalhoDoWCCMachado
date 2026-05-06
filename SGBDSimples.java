@@ -124,7 +124,7 @@ public class Gerenc_Arc extends JFrame {
         toolBar.setFloatable(false);
         toolBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Tema.PAINEL));
 
-        JButton btnNovaTab = criarBotao("📝 Nova Tabela");
+        JButton btnNovaTab = criarBotao("📝 Adicionar Entidade");
         btnNovaTab.addActionListener(e -> criarNovaTabela());
         JButton btnInserir = criarBotao("➕ Inserir Registro");
         btnInserir.addActionListener(e -> inserirRegistro());
